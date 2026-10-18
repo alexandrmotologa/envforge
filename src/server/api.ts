@@ -153,12 +153,17 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
   });
 
   // PUT /api/matrix/cell (In-place edit)
-  app.put<{ Body: { envName: string; key: string; value: string; filePath?: string } }>(
+  app.put<{ Body: { envName?: string; environment?: string; key: string; value: string; filePath?: string } }>(
     '/api/matrix/cell',
     async (req, reply) => {
-      const { envName, key, value, filePath } = req.body || {};
+      const body = req.body || {};
+      const envName = body.envName || body.environment;
+      const key = body.key;
+      const value = body.value;
+      const filePath = body.filePath;
+
       if (!envName || !key || value === undefined) {
-        return reply.status(400).send({ error: 'envName, key, and value are required' });
+        return reply.status(400).send({ error: 'envName or environment, key, and value are required' });
       }
 
       let targetFile = filePath;
@@ -181,6 +186,7 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
 
       broadcastSSE({
         type: 'scan_updated',
+        event: 'rescan',
         report: cachedReport,
         action: 'cell_updated',
         key,
@@ -190,6 +196,7 @@ export async function createServer(options: ServerOptions): Promise<FastifyInsta
       return {
         message: `Successfully ${res.action} "${key}" in ${path.basename(res.filePath)}`,
         action: res.action,
+        report: cachedReport,
         updatedReport: cachedReport,
       };
     }

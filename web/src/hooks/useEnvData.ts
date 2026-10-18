@@ -144,7 +144,7 @@ export function useEnvData() {
       es.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          if (payload.event === 'rescan' && payload.report) {
+          if (payload.report) {
             setReport(payload.report);
           }
         } catch {}
