@@ -48,18 +48,23 @@ EnvForge audits environment configurations across multiple formats and execution
 </p>
 
 <p align="center">
+  <img src="docs/images/envforge_diff.png" alt="1-to-1 Visual Diff Mode" width="100%"/>
+  <em>Figure 2: 1-to-1 Visual Diff Mode comparing configurations, showing identical values, discrepancies, and one-click key transfer.</em>
+</p>
+
+<p align="center">
   <img src="docs/images/envforge_code_trace.png" alt="Codebase AST Trace Drawer" width="100%"/>
-  <em>Figure 2: AST code reference drawer displaying exact file paths, line numbers, and context snippets.</em>
+  <em>Figure 3: AST code reference drawer displaying exact file paths, line numbers, and context snippets.</em>
 </p>
 
 <p align="center">
   <img src="docs/images/envforge_schema_export.png" alt="Type-Safe Schema Export Modal" width="100%"/>
-  <em>Figure 3: Schema generator supporting Zod, T3-Env, Valibot, Python Pydantic Settings, TypeScript, JSON Schema, and .env.example.</em>
+  <em>Figure 4: Schema generator supporting Zod, T3-Env, Valibot, Python Pydantic Settings, TypeScript, JSON Schema, and .env.example.</em>
 </p>
 
 <p align="center">
   <img src="docs/images/envforge_sync.png" alt="1-Click Environment Sync" width="100%"/>
-  <em>Figure 4: 1-Click synchronization dialog to align missing keys across environments.</em>
+  <em>Figure 5: 1-Click synchronization dialog to align missing keys across environments.</em>
 </p>
 
 ---

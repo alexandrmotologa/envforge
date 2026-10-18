@@ -76,29 +76,31 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          {/* View Modes Switcher */}
-          <div className="hidden md:flex items-center bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs">
+          {/* View Modes Switcher (Responsive for all screen sizes) */}
+          <div className="flex items-center bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs">
             <button
               onClick={() => setActiveTab('matrix')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
                 activeTab === 'matrix'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              Parity Matrix
+              <span className="hidden sm:inline">Parity Matrix</span>
+              <span className="sm:hidden">Matrix</span>
             </button>
             <button
               onClick={() => setActiveTab('diff')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
                 activeTab === 'diff'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <ArrowLeftRight className="w-3.5 h-3.5" />
-              Visual Diff
+              <span className="hidden sm:inline">Visual Diff</span>
+              <span className="sm:hidden">Diff</span>
             </button>
           </div>
 
