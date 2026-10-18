@@ -127,60 +127,60 @@ envforge/
 
 ## 3. Implementation Roadmap and Checklist
 
-- [ ] **Task 1: Project Initialization and Infrastructure**
-  - [ ] Initialize root `package.json` with Node.js 22+ engine requirements.
-  - [ ] Configure `tsconfig.json` for ESM and strict type checking.
-  - [ ] Install core dependencies (`zod`, `dotenv`, `yaml`, `@babel/parser`, `@babel/traverse`, `commander`, `picocolors`, `fastify`, `@fastify/cors`, `@fastify/static`).
-  - [ ] Setup Vitest for automated testing.
-  - [ ] Define core TypeScript interfaces and domain types in `src/types/index.ts`.
+- [x] **Task 1: Project Initialization and Infrastructure**
+  - [x] Initialize root `package.json` with Node.js 22+ engine requirements.
+  - [x] Configure `tsconfig.json` for ESM and strict type checking.
+  - [x] Install core dependencies (`zod`, `dotenv`, `yaml`, `@babel/parser`, `@babel/traverse`, `commander`, `picocolors`, `fastify`, `@fastify/cors`, `@fastify/static`).
+  - [x] Setup Vitest for automated testing.
+  - [x] Define core TypeScript interfaces and domain types in `src/types/index.ts`.
 
-- [ ] **Task 2: Universal Multi-Format Configuration Parsers**
-  - [ ] Implement `src/parsers/dotenv.ts` with support for comments, unquoted values, multiline strings, and variable expansions.
-  - [ ] Implement `src/parsers/compose.ts` for Docker Compose environment mappings and arrays.
-  - [ ] Implement `src/parsers/kubernetes.ts` for ConfigMap and Secret manifests with base64 decoding.
-  - [ ] Implement `src/parsers/terraform.ts` for `.tfvars` variable assignments.
-  - [ ] Implement `src/parsers/detector.ts` for automatic workspace file discovery and environment mapping.
-  - [ ] Write comprehensive unit tests in `tests/parsers.test.ts`.
+- [x] **Task 2: Universal Multi-Format Configuration Parsers**
+  - [x] Implement `src/parsers/dotenv.ts` with support for comments, unquoted values, multiline strings, and variable expansions.
+  - [x] Implement `src/parsers/compose.ts` for Docker Compose environment mappings and arrays.
+  - [x] Implement `src/parsers/kubernetes.ts` for ConfigMap and Secret manifests with base64 decoding.
+  - [x] Implement `src/parsers/terraform.ts` for `.tfvars` variable assignments.
+  - [x] Implement `src/parsers/detector.ts` for automatic workspace file discovery and environment mapping.
+  - [x] Write comprehensive unit tests in `tests/parsers.test.ts`.
 
-- [ ] **Task 3: Codebase Reference AST Scanner**
-  - [ ] Implement `src/scanner/js_scanner.ts` with Babel AST traversal for `process.env`, `import.meta.env`, and destructuring patterns.
-  - [ ] Implement `src/scanner/python_scanner.ts` for `os.environ` and `os.getenv`.
-  - [ ] Implement `src/scanner/go_scanner.ts` for `os.Getenv` and `os.LookupEnv`.
-  - [ ] Implement `src/scanner/orchestrator.ts` with `.gitignore` filtering and ghost variable detection.
-  - [ ] Write unit tests in `tests/scanner.test.ts`.
+- [x] **Task 3: Codebase Reference AST Scanner**
+  - [x] Implement `src/scanner/js_scanner.ts` with Babel AST traversal for `process.env`, `import.meta.env`, and destructuring patterns.
+  - [x] Implement `src/scanner/python_scanner.ts` for `os.environ` and `os.getenv`.
+  - [x] Implement `src/scanner/go_scanner.ts` for `os.Getenv` and `os.LookupEnv`.
+  - [x] Implement `src/scanner/orchestrator.ts` with `.gitignore` filtering and ghost variable detection.
+  - [x] Write unit tests in `tests/scanner.test.ts`.
 
-- [ ] **Task 4: Type Inference, Secret Detection, and Parity Comparator**
-  - [ ] Implement `src/matrix/type_infer.ts` for port, URL, email, boolean, number, enum, and string classification.
-  - [ ] Implement `src/matrix/secret_detector.ts` with Shannon entropy calculations and deterministic token regex patterns.
-  - [ ] Implement `src/matrix/drift_rules.ts` defining drift conditions and severity levels.
-  - [ ] Implement `src/matrix/comparator.ts` constructing the complete parity matrix and scoring.
-  - [ ] Write unit tests in `tests/type_infer.test.ts`, `tests/secret_detector.test.ts`, and `tests/comparator.test.ts`.
+- [x] **Task 4: Type Inference, Secret Detection, and Parity Comparator**
+  - [x] Implement `src/matrix/type_infer.ts` for port, URL, email, boolean, number, enum, and string classification.
+  - [x] Implement `src/matrix/secret_detector.ts` with Shannon entropy calculations and deterministic token regex patterns.
+  - [x] Implement `src/matrix/drift_rules.ts` defining drift conditions and severity levels.
+  - [x] Implement `src/matrix/comparator.ts` constructing the complete parity matrix and scoring.
+  - [x] Write unit tests in `tests/type_infer.test.ts`, `tests/secret_detector.test.ts`, and `tests/comparator.test.ts`.
 
-- [ ] **Task 5: Schema and Template Synthesizers**
-  - [ ] Implement `src/generator/zod.ts` producing valid, executable Zod validation modules.
-  - [ ] Implement `src/generator/typescript.ts` producing `env.d.ts` declaration files.
-  - [ ] Implement `src/generator/json_schema.ts` producing standard JSON Schema definitions.
-  - [ ] Implement `src/generator/example.ts` generating clean `.env.example` templates with sanitized placeholders.
-  - [ ] Implement `src/generator/sync.ts` for synchronizing missing keys between environments.
-  - [ ] Write unit tests in `tests/generator.test.ts`.
+- [x] **Task 5: Schema and Template Synthesizers**
+  - [x] Implement `src/generator/zod.ts` producing valid, executable Zod validation modules.
+  - [x] Implement `src/generator/typescript.ts` producing `env.d.ts` declaration files.
+  - [x] Implement `src/generator/json_schema.ts` producing standard JSON Schema definitions.
+  - [x] Implement `src/generator/example.ts` generating clean `.env.example` templates with sanitized placeholders.
+  - [x] Implement `src/generator/sync.ts` for synchronizing missing keys between environments.
+  - [x] Write unit tests in `tests/generator.test.ts`.
 
-- [ ] **Task 6: Fastify Server and Web Studio**
-  - [ ] Implement `src/server/api.ts` with REST endpoints (`/api/matrix`, `/api/references`, `/api/schemas`, `/api/sync`, `/api/rescan`).
-  - [ ] Scaffold React 19 web application in `web/` using Vite and Tailwind CSS.
-  - [ ] Implement `ParityMatrixGrid.tsx` with search, filter badges, and detailed cell inspection.
-  - [ ] Implement `DriftAlertCard.tsx` displaying critical drift warnings and exposed secrets.
-  - [ ] Implement `CodebaseAuditView.tsx` with file path, line numbers, and code context.
-  - [ ] Implement `SchemaExportModal.tsx` with live schema generation and copy actions.
-  - [ ] Build production assets into `dist/web` and wire up static serving in `src/server/static.ts`.
+- [x] **Task 6: Fastify Server and Web Studio**
+  - [x] Implement `src/server/api.ts` with REST endpoints (`/api/matrix`, `/api/references`, `/api/schemas`, `/api/sync`, `/api/rescan`).
+  - [x] Scaffold React 19 web application in `web/` using Vite and Tailwind CSS.
+  - [x] Implement `ParityMatrixGrid.tsx` with search, filter badges, and detailed cell inspection.
+  - [x] Implement `DriftAlertCard.tsx` displaying critical drift warnings and exposed secrets.
+  - [x] Implement `CodebaseAuditView.tsx` with file path, line numbers, and code context.
+  - [x] Implement `SchemaExportModal.tsx` with live schema generation and copy actions.
+  - [x] Build production assets into `dist/web` and wire up static serving in `src/server/static.ts`.
 
-- [ ] **Task 7: Command Line Interface (CLI)**
-  - [ ] Implement `src/cli.ts` with commands: `check`, `audit`, `scan`, `generate`, and `studio`.
-  - [ ] Add ANSI color output, structured error exit codes for CI/CD pipelines, and JSON/Markdown export formats.
-  - [ ] Test all CLI commands against fixture projects.
+- [x] **Task 7: Command Line Interface (CLI)**
+  - [x] Implement `src/cli.ts` with commands: `check`, `audit`, `scan`, `generate`, and `studio`.
+  - [x] Add ANSI color output, structured error exit codes for CI/CD pipelines, and JSON/Markdown export formats.
+  - [x] Test all CLI commands against fixture projects.
 
-- [ ] **Task 8: Documentation, Real Assets, and Release Validation**
-  - [ ] Create detailed `README.md` following humanizer principles with architecture diagrams and usage guides.
-  - [ ] Create `docs/ARCHITECTURE.md`.
-  - [ ] Generate real UI screenshots and terminal recordings.
-  - [ ] Create animated demo GIF (`docs/images/envforge_demo.gif`).
-  - [ ] Run full test suite, verify 100% pass rate, and push commits to GitHub.
+- [x] **Task 8: Documentation, Real Assets, and Release Validation**
+  - [x] Create detailed `README.md` following humanizer principles with architecture diagrams and usage guides.
+  - [x] Create `docs/ARCHITECTURE.md`.
+  - [x] Generate real UI screenshots and terminal recordings.
+  - [x] Create animated demo GIF (`docs/images/envforge_demo.gif`).
+  - [x] Run full test suite, verify 100% pass rate, and push commits to GitHub.
