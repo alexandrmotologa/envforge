@@ -69,3 +69,45 @@ export function getMissingKeysForEnv(
 
   return missing;
 }
+
+export function updateOrInsertEnvVariable(
+  filePath: string,
+  key: string,
+  value: string
+): { success: boolean; action: 'updated' | 'inserted'; filePath: string } {
+  let content = '';
+  if (fs.existsSync(filePath)) {
+    content = fs.readFileSync(filePath, 'utf8');
+  }
+
+  const lines = content.split(/\r?\n/);
+  let updated = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const eqIdx = line.indexOf('=');
+      if (eqIdx !== -1) {
+        const lineKey = line.substring(0, eqIdx).trim();
+        if (lineKey === key) {
+          // Check for existing inline comment
+          const commentMatch = line.substring(eqIdx + 1).match(/\s+(#.*)$/);
+          const inlineComment = commentMatch ? commentMatch[1] : '';
+          const quote = value.includes(' ') || value.includes('\n') ? '"' : '';
+          lines[i] = `${key}=${quote}${value}${quote}${inlineComment ? ' ' + inlineComment : ''}`;
+          updated = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!updated) {
+    const quote = value.includes(' ') || value.includes('\n') ? '"' : '';
+    lines.push(`${key}=${quote}${value}${quote}`);
+  }
+
+  fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
+  return { success: true, action: updated ? 'updated' : 'inserted', filePath };
+}

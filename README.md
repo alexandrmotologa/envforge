@@ -23,10 +23,12 @@ EnvForge audits environment configurations across multiple formats and execution
 
 1. **Multi-Format Configuration Ingestion**: parses `.env.*`, `docker-compose.yml`, Kubernetes ConfigMaps and Secrets, and Terraform `.tfvars`.
 2. **Cross-Environment Parity Matrix**: constructs a unified alignment grid across Local, Development, Staging, and Production environments, classifying missing, drifted, and type-mismatched keys.
-3. **AST Codebase Reference Scanner**: parses TypeScript, JavaScript, Python, and Go source code to track exact variable usage, flagging ghost variables used in code but absent from configuration templates.
-4. **Secret Leak Detection**: calculates Shannon entropy and validates against deterministic token signatures to prevent accidental exposure of production credentials in local or example files.
-5. **Type-Safe Schema Synthesizer**: automatically generates executable Zod validation modules, TypeScript `ProcessEnv` declarations, JSON Schemas, and sanitized `.env.example` templates.
-6. **CI Gating and Interactive Studio**: blocks pull requests on drift using strict exit codes, or provides an interactive web studio with 1-click synchronization.
+3. **1-to-1 Visual Diff Mode**: direct side-by-side comparison between any two environments, tracking identical values, drifted configurations, and missing keys with one-click transfer.
+4. **AST Codebase Reference Scanner**: parses TypeScript, JavaScript, Python, and Go source code to track exact variable usage, flagging ghost variables used in code but absent from configuration templates.
+5. **Secret Leak Detection**: calculates Shannon entropy and validates against deterministic token signatures to prevent accidental exposure of production credentials in local or example files.
+6. **Type-Safe Schema Synthesizer**: automatically generates executable validation modules for Zod, T3-Env, Valibot, Python Pydantic Settings (`BaseSettings`), TypeScript global declarations, JSON Schemas, and sanitized `.env.example` templates.
+7. **CI Gating and Pre-Commit Hooks**: blocks pull requests on drift using strict exit codes, writes Markdown job summaries to `$GITHUB_STEP_SUMMARY`, and installs pre-commit hooks via `envforge init-hook`.
+8. **Interactive Web Studio with Live Watcher**: local web dashboard with real-time file monitoring over Server-Sent Events (SSE), in-place cell editing, and secret masking.
 
 ---
 
@@ -42,7 +44,7 @@ EnvForge audits environment configurations across multiple formats and execution
 
 <p align="center">
   <img src="docs/images/envforge_matrix.png" alt="Parity Matrix Grid" width="100%"/>
-  <em>Figure 1: Cross-environment parity grid with real-time status indicators and drift alerts.</em>
+  <em>Figure 1: Cross-environment parity grid with real-time status indicators, in-place cell editing, and drift alerts.</em>
 </p>
 
 <p align="center">
@@ -52,7 +54,7 @@ EnvForge audits environment configurations across multiple formats and execution
 
 <p align="center">
   <img src="docs/images/envforge_schema_export.png" alt="Type-Safe Schema Export Modal" width="100%"/>
-  <em>Figure 3: Live schema code generator for Zod, TypeScript, JSON Schema, and sanitized templates.</em>
+  <em>Figure 3: Schema generator supporting Zod, T3-Env, Valibot, Python Pydantic Settings, TypeScript, JSON Schema, and .env.example.</em>
 </p>
 
 <p align="center">
@@ -92,9 +94,22 @@ npx envforge check --fail-on-secrets
 
 # Strict mode: fail on drift, secrets, or undeclared ghost variables
 npx envforge check --strict --path ./services/api
+
+# Output report into GitHub Actions step summary
+npx envforge check --strict --github-summary
 ```
 
-### 2. Comprehensive Diagnostic Audit
+### 2. Git Pre-Commit Hook Setup
+Install automated pre-commit verification to prevent secrets from entering version control:
+```bash
+# Auto-detects .husky or native .git hooks
+npx envforge init-hook
+
+# Explicitly install to Husky
+npx envforge init-hook --husky
+```
+
+### 3. Comprehensive Diagnostic Audit
 Print a formatted parity table directly in the terminal:
 ```bash
 npx envforge audit
@@ -109,7 +124,7 @@ npx envforge audit --json > parity-audit.json
 npx envforge audit --markdown > PARITY_REPORT.md
 ```
 
-### 3. Codebase AST Reference Scan
+### 4. Codebase AST Reference Scan
 Find all locations where environment variables are referenced in source files:
 ```bash
 npx envforge scan --path ./src
@@ -131,11 +146,20 @@ Found 7 distinct environment variables referenced in code:
     src/server.ts:8:21 -> const stripeSecret = process.env.STRIPE_WEBHOOK_SECRET;
 ```
 
-### 4. Schema Generation
-Synthesize ready-to-use validation files:
+### 5. Schema Generation
+Synthesize ready-to-use validation files for multiple ecosystems:
 ```bash
-# Generate strict Zod validation module
+# Generate Zod validation module
 npx envforge generate --schema zod --out src/env.ts
+
+# Generate T3-Env schema (server and client split)
+npx envforge generate --schema t3 --out src/env.mjs
+
+# Generate Valibot schema
+npx envforge generate --schema valibot --out src/env.valibot.ts
+
+# Generate Python Pydantic Settings class
+npx envforge generate --schema pydantic --out settings.py
 
 # Generate TypeScript global declarations
 npx envforge generate --schema typescript --out src/env.d.ts
@@ -147,7 +171,7 @@ npx envforge generate --schema json --out .env.schema.json
 npx envforge generate --schema example --out .env.example
 ```
 
-### 5. 1-Click Synchronization
+### 6. 1-Click Synchronization
 Append missing keys from other environments to a target file:
 ```bash
 # Preview missing keys
@@ -160,8 +184,8 @@ npx envforge sync --target example
 npx envforge sync --target staging --file .env.staging
 ```
 
-### 6. Interactive Web Studio
-Launch the local web studio with visual parity grid and live AST explorer:
+### 7. Interactive Web Studio
+Launch the local web studio with visual parity grid, 1-to-1 diff mode, live file watcher, and AST explorer:
 ```bash
 npx envforge studio --port 4300
 ```
@@ -203,6 +227,29 @@ export function validateEnv(runtimeEnv: Record<string, string | undefined> = pro
 export const env = validateEnv();
 ```
 
+### Python Pydantic Settings (`settings.py`)
+```python
+# Generated by EnvForge
+from typing import Optional
+from pydantic import Field, SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
+
+    DATABASE_URL: SecretStr = Field(..., description="PostgreSQL database connection string")
+    PORT: int = Field(default=3000, ge=1, le=65535)
+    DEBUG: bool = Field(default=False)
+    JWT_SECRET: SecretStr = Field(...)
+    STRIPE_WEBHOOK_SECRET: Optional[str] = Field(default=None)
+
+settings = Settings()
+```
+
 ---
 
 ## Programmatic API
@@ -214,7 +261,10 @@ import {
   discoverEnvironmentSources,
   scanCodebase,
   buildParityMatrix,
+  compareTwoEnvironments,
   generateZodSchema,
+  generatePydanticSettings,
+  generateT3EnvSchema,
 } from 'envforge';
 
 // 1. Discover all configuration sources
@@ -230,8 +280,14 @@ console.log(`Parity Score: ${report.summary.parityScore}%`);
 console.log(`Missing Keys: ${report.summary.missingVariablesCount}`);
 console.log(`Secrets Exposed: ${report.summary.secretCount}`);
 
-// 4. Generate Zod schema
+// 4. Compare two environments side-by-side
+const diff = compareTwoEnvironments(report, 'local', 'production');
+console.log(`Identical keys: ${diff.summary.identicalCount}`);
+console.log(`Differing keys: ${diff.summary.differentCount}`);
+
+// 5. Generate schemas
 const zodCode = generateZodSchema(report.rows);
+const pydanticCode = generatePydanticSettings(report.rows);
 ```
 
 ---
@@ -244,7 +300,7 @@ For an in-depth explanation of AST visitor algorithms, Shannon entropy detection
 
 ## Testing
 
-Run the automated test suite covering all parsers, AST visitors, secret detection rules, and schema synthesizers:
+Run the automated test suite covering all parsers, AST visitors, secret detection rules, diff engines, and schema synthesizers:
 ```bash
 npm test
 ```

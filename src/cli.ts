@@ -10,6 +10,9 @@ import { generateZodSchema } from './generator/zod.js';
 import { generateTypeScriptDeclarations } from './generator/typescript.js';
 import { generateJsonSchema } from './generator/json_schema.js';
 import { generateEnvExample } from './generator/example.js';
+import { generateT3EnvSchema } from './generator/t3_env.js';
+import { generatePydanticSettings } from './generator/pydantic.js';
+import { generateValibotSchema } from './generator/valibot.js';
 import { appendMissingKeysToEnvFile, getMissingKeysForEnv } from './generator/sync.js';
 import { createServer } from './server/api.js';
 import { registerStaticFrontend } from './server/static.js';
@@ -29,6 +32,7 @@ program
   .option('--fail-on-drift', 'Exit with code 1 if configuration drift or missing keys are found')
   .option('--fail-on-secrets', 'Exit with code 2 if plaintext secrets are found in non-prod environments')
   .option('--strict', 'Fail on any drift, missing keys, exposed secrets, or ghost code references')
+  .option('--github-summary', 'Append audit report to GitHub Actions GITHUB_STEP_SUMMARY')
   .action(async (options) => {
     const cwd = path.resolve(options.path);
     console.log(pc.cyan(`\n🔍 EnvForge Parity Check: ${cwd}\n`));
@@ -38,6 +42,17 @@ program
     const report = buildParityMatrix(sources, codeRefs, cwd);
 
     printSummaryBanner(report);
+
+    if (options.githubSummary) {
+      const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+      if (summaryFile) {
+        const md = generateMarkdownReport(report);
+        fs.appendFileSync(summaryFile, `\n${md}\n`, 'utf8');
+        console.log(pc.green(`✓ Appended parity report to GITHUB_STEP_SUMMARY`));
+      } else {
+        console.log(pc.yellow(`⚠️ GITHUB_STEP_SUMMARY environment variable is not defined (not running in GitHub Actions)`));
+      }
+    }
 
     let hasDriftOrMissing = report.summary.missingVariablesCount > 0 || report.summary.driftCount > 0;
     let hasSecrets = report.summary.secretCount > 0;
@@ -145,7 +160,7 @@ program
 program
   .command('generate')
   .description('Synthesize type-safe schema or sanitized configuration templates')
-  .option('-s, --schema <type>', 'Schema format: zod, typescript, json, example', 'zod')
+  .option('-s, --schema <type>', 'Schema format: zod, typescript, json, example, t3, pydantic, valibot', 'zod')
   .option('-o, --out <file>', 'Output destination file path')
   .option('-p, --path <path>', 'Workspace directory path', '.')
   .action(async (options) => {
@@ -172,8 +187,19 @@ program
       case 'env':
         output = generateEnvExample(report.rows);
         break;
+      case 't3':
+      case 't3-env':
+        output = generateT3EnvSchema(report.rows);
+        break;
+      case 'pydantic':
+      case 'python':
+        output = generatePydanticSettings(report.rows);
+        break;
+      case 'valibot':
+        output = generateValibotSchema(report.rows);
+        break;
       default:
-        console.error(pc.red(`Error: Unknown schema format "${options.schema}". Choose from: zod, typescript, json, example`));
+        console.error(pc.red(`Error: Unknown schema format "${options.schema}". Choose from: zod, typescript, json, example, t3, pydantic, valibot`));
         process.exit(1);
     }
 
@@ -235,6 +261,44 @@ program
     console.log(pc.green(`\n✓ Appended ${res.added.length} keys to ${res.filePath}\n`));
   });
 
+// Command: init-hook
+program
+  .command('init-hook')
+  .description('Install Git pre-commit hook to block secret leaks and configuration drift')
+  .option('-p, --path <path>', 'Workspace directory path', '.')
+  .option('--husky', 'Install hook into .husky directory')
+  .action(async (options) => {
+    const cwd = path.resolve(options.path);
+    const huskyDir = path.join(cwd, '.husky');
+    const gitDir = path.join(cwd, '.git');
+
+    const hookScript = `#!/usr/bin/env sh\n# EnvForge pre-commit hook: verify parity and block exposed secrets\nnpx envforge check --strict\n`;
+
+    if (options.husky || fs.existsSync(huskyDir)) {
+      if (!fs.existsSync(huskyDir)) {
+        fs.mkdirSync(huskyDir, { recursive: true });
+      }
+      const hookPath = path.join(huskyDir, 'pre-commit');
+      fs.writeFileSync(hookPath, hookScript, { mode: 0o755 });
+      console.log(pc.green(`✓ Husky pre-commit hook installed at: ${hookPath}`));
+      return;
+    }
+
+    if (fs.existsSync(gitDir)) {
+      const hooksDir = path.join(gitDir, 'hooks');
+      if (!fs.existsSync(hooksDir)) {
+        fs.mkdirSync(hooksDir, { recursive: true });
+      }
+      const hookPath = path.join(hooksDir, 'pre-commit');
+      fs.writeFileSync(hookPath, hookScript, { mode: 0o755 });
+      console.log(pc.green(`✓ Native Git pre-commit hook installed at: ${hookPath}`));
+      return;
+    }
+
+    console.error(pc.red(`Error: No .git or .husky directory found at ${cwd}. Initialize git first.`));
+    process.exit(1);
+  });
+
 // Command: studio
 program
   .command('studio')
@@ -242,15 +306,18 @@ program
   .option('-p, --port <port>', 'Server port', '4300')
   .option('-h, --host <host>', 'Server host', 'localhost')
   .option('-d, --dir <dir>', 'Workspace directory path', '.')
+  .option('--no-watcher', 'Disable real-time workspace file watcher')
   .action(async (options) => {
     const port = parseInt(options.port, 10);
     const host = options.host;
     const workspacePath = path.resolve(options.dir);
+    const enableWatcher = options.watcher !== false;
 
     console.log(pc.cyan(`\n⚡ Starting EnvForge Web Studio...`));
-    console.log(pc.dim(`Workspace: ${workspacePath}\n`));
+    console.log(pc.dim(`Workspace: ${workspacePath}`));
+    console.log(pc.dim(`Live Watcher: ${enableWatcher ? 'Enabled' : 'Disabled'}\n`));
 
-    const server = await createServer({ workspacePath, port, host });
+    const server = await createServer({ workspacePath, port, host, enableWatcher });
     await registerStaticFrontend(server);
 
     await server.listen({ port, host });

@@ -73,6 +73,7 @@ export function useEnvData() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRow, setSelectedRow] = useState<ParityMatrixRow | null>(null);
+  const [isLive, setIsLive] = useState(false);
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -105,9 +106,62 @@ export function useEnvData() {
     }
   }, []);
 
+  const updateCell = useCallback(async (environment: string, key: string, value: string) => {
+    try {
+      const res = await fetch('/api/matrix/cell', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ environment, key, value }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || `Failed to update cell: ${res.statusText}`);
+      }
+      const data = await res.json();
+      if (data.report) {
+        setReport(data.report);
+      } else {
+        await fetchReport();
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to update cell' };
+    }
+  }, [fetchReport]);
+
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  // Connect to SSE stream for live hot-reload
+  useEffect(() => {
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource('/api/events');
+      es.onopen = () => {
+        setIsLive(true);
+      };
+      es.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.event === 'rescan' && payload.report) {
+            setReport(payload.report);
+          }
+        } catch {}
+      };
+      es.onerror = () => {
+        setIsLive(false);
+      };
+    } catch {
+      setIsLive(false);
+    }
+
+    return () => {
+      if (es) {
+        es.close();
+      }
+    };
+  }, []);
 
   const filteredRows = useMemo(() => {
     if (!report) return [];
@@ -161,7 +215,9 @@ export function useEnvData() {
     filteredRows,
     selectedRow,
     setSelectedRow,
+    isLive,
     fetchReport,
     rescan,
+    updateCell,
   };
 }

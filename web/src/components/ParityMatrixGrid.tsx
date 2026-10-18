@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ParityMatrixRow, CellStatus } from '../hooks/useEnvData.js';
-import { ShieldAlert, Code2, AlertTriangle, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
+import { ShieldAlert, Code2, AlertTriangle, CheckCircle2, XCircle, HelpCircle, Pencil, Check, X } from 'lucide-react';
 
 interface ParityMatrixGridProps {
   rows: ParityMatrixRow[];
   environments: string[];
   onSelectRow: (row: ParityMatrixRow) => void;
   onOpenCodeTrace: (row: ParityMatrixRow) => void;
+  onUpdateCell?: (env: string, key: string, value: string) => Promise<{ success: boolean; error?: string }>;
+  maskSecrets?: boolean;
 }
 
 export const ParityMatrixGrid: React.FC<ParityMatrixGridProps> = ({
@@ -14,43 +16,74 @@ export const ParityMatrixGrid: React.FC<ParityMatrixGridProps> = ({
   environments,
   onSelectRow,
   onOpenCodeTrace,
+  onUpdateCell,
+  maskSecrets = true,
 }) => {
+  const [editingCell, setEditingCell] = useState<{ key: string; env: string } | null>(null);
+  const [cellValue, setCellValue] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
   if (rows.length === 0) {
     return (
-      <div className="py-16 text-center bg-dark-900/50 border border-slate-800 rounded-xl">
-        <p className="text-slate-400 text-sm">No environment variables match the current criteria.</p>
+      <div className="py-16 text-center bg-zinc-900/50 border border-zinc-800 rounded-xl">
+        <p className="text-zinc-400 text-sm">No environment variables match the current criteria.</p>
       </div>
     );
   }
 
+  const startEditing = (key: string, env: string, currentValue?: string) => {
+    setEditingCell({ key, env });
+    setCellValue(currentValue || '');
+  };
+
+  const cancelEditing = () => {
+    setEditingCell(null);
+    setCellValue('');
+  };
+
+  const saveCell = async (key: string, env: string) => {
+    if (!onUpdateCell) return;
+    setIsSaving(true);
+    try {
+      const res = await onUpdateCell(env, key, cellValue);
+      if (res.success) {
+        setEditingCell(null);
+      } else {
+        alert(res.error || 'Failed to save value');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <div className="overflow-x-auto border border-slate-800 rounded-xl bg-dark-900/60 shadow-xl backdrop-blur-md">
+    <div className="overflow-x-auto border border-zinc-800 rounded-xl bg-zinc-900/60 shadow-xl backdrop-blur-md">
       <table className="w-full text-left text-sm border-collapse">
         <thead>
-          <tr className="border-b border-slate-800 bg-dark-850/80 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <tr className="border-b border-zinc-800 bg-zinc-950/80 text-xs font-semibold uppercase tracking-wider text-zinc-400">
             <th className="py-3 px-4 min-w-[220px]">Variable Key</th>
             <th className="py-3 px-4 min-w-[100px]">Type</th>
             <th className="py-3 px-4 min-w-[90px] text-center">Code Traces</th>
             {environments.map((env) => (
-              <th key={env} className="py-3 px-4 min-w-[140px] text-center capitalize">
+              <th key={env} className="py-3 px-4 min-w-[150px] text-center capitalize">
                 {env}
               </th>
             ))}
             <th className="py-3 px-4 min-w-[100px] text-right">Details</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
+        <tbody className="divide-y divide-zinc-800/60 font-mono text-xs">
           {rows.map((row) => {
             const hasSecret = !!row.secretFinding;
             return (
               <tr
                 key={row.key}
-                className="hover:bg-dark-800/50 transition-colors group"
+                className="hover:bg-zinc-800/40 transition-colors group"
               >
                 {/* Key Column */}
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-100 group-hover:text-cyan-300 transition-colors">
+                    <span className="font-semibold text-zinc-100 group-hover:text-cyan-400 transition-colors">
                       {row.key}
                     </span>
                     {hasSecret && (
@@ -68,13 +101,13 @@ export const ParityMatrixGrid: React.FC<ParityMatrixGridProps> = ({
                       </span>
                     )}
                     {row.isOrphaned && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-sans font-medium bg-slate-500/10 text-slate-400 border border-slate-500/20">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-sans font-medium bg-zinc-700/30 text-zinc-400 border border-zinc-700/40">
                         Orphaned
                       </span>
                     )}
                   </div>
                   {row.description && (
-                    <div className="text-[11px] text-slate-400 font-sans mt-0.5 truncate max-w-sm">
+                    <div className="text-[11px] text-zinc-400 font-sans mt-0.5 truncate max-w-sm">
                       {row.description}
                     </div>
                   )}
@@ -92,23 +125,72 @@ export const ParityMatrixGrid: React.FC<ParityMatrixGridProps> = ({
                   {row.codeReferences.length > 0 ? (
                     <button
                       onClick={() => onOpenCodeTrace(row)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-cyan-300 border border-slate-700 transition-all font-sans text-xs"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-cyan-300 border border-zinc-700 transition-all font-sans text-xs"
                       title="View occurrences in codebase"
                     >
                       <Code2 className="w-3 h-3 text-cyan-400" />
                       {row.codeReferences.length}
                     </button>
                   ) : (
-                    <span className="text-slate-600 font-sans text-xs">0</span>
+                    <span className="text-zinc-600 font-sans text-xs">0</span>
                   )}
                 </td>
 
                 {/* Environment Cells */}
                 {environments.map((env) => {
                   const cell = row.environments[env];
+                  const isEditing = editingCell?.key === row.key && editingCell?.env === env;
+
+                  if (isEditing) {
+                    return (
+                      <td key={env} className="py-2 px-2 text-center bg-zinc-800/80">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={cellValue}
+                            onChange={(e) => setCellValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveCell(row.key, env);
+                              if (e.key === 'Escape') cancelEditing();
+                            }}
+                            autoFocus
+                            placeholder="Value"
+                            className="w-full bg-zinc-950 border border-cyan-500 rounded px-2 py-1 text-xs text-zinc-100 font-mono focus:outline-none"
+                          />
+                          <button
+                            onClick={() => saveCell(row.key, env)}
+                            disabled={isSaving}
+                            className="p-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+                            title="Save"
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={cancelEditing}
+                            className="p-1 rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-300 transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </td>
+                    );
+                  }
+
                   return (
-                    <td key={env} className="py-3 px-4 text-center">
-                      <CellBadge cell={cell} />
+                    <td key={env} className="py-3 px-4 text-center relative group/cell">
+                      <div className="flex items-center justify-center gap-1">
+                        <CellBadge cell={cell} maskSecrets={maskSecrets} />
+                        {onUpdateCell && (
+                          <button
+                            onClick={() => startEditing(row.key, env, cell?.value)}
+                            className="opacity-0 group-hover/cell:opacity-100 p-1 rounded hover:bg-zinc-700 text-zinc-400 hover:text-cyan-300 transition-opacity"
+                            title="Edit value"
+                          >
+                            <Pencil className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   );
                 })}
@@ -117,7 +199,7 @@ export const ParityMatrixGrid: React.FC<ParityMatrixGridProps> = ({
                 <td className="py-3 px-4 text-right">
                   <button
                     onClick={() => onSelectRow(row)}
-                    className="px-2.5 py-1 text-xs font-sans text-slate-300 hover:text-white bg-dark-800 hover:bg-dark-700 border border-slate-700 rounded-md transition-colors"
+                    className="px-2.5 py-1 text-xs font-sans text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-md transition-colors"
                   >
                     Inspect
                   </button>
@@ -131,16 +213,23 @@ export const ParityMatrixGrid: React.FC<ParityMatrixGridProps> = ({
   );
 };
 
-const CellBadge: React.FC<{ cell?: { status: CellStatus; value?: string; reason?: string } }> = ({ cell }) => {
+const CellBadge: React.FC<{
+  cell?: { status: CellStatus; value?: string; reason?: string };
+  maskSecrets?: boolean;
+}> = ({ cell, maskSecrets = true }) => {
   if (!cell) {
-    return <span className="text-slate-600">-</span>;
+    return <span className="text-zinc-600">-</span>;
   }
+
+  const tooltipValue = maskSecrets && cell.value && cell.value.length > 4
+    ? '•••••••• (Masked)'
+    : cell.value;
 
   switch (cell.status) {
     case 'OK':
       return (
         <span
-          title={cell.value}
+          title={tooltipValue}
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
         >
           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
@@ -179,7 +268,7 @@ const CellBadge: React.FC<{ cell?: { status: CellStatus; value?: string; reason?
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-slate-800 text-slate-400">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-zinc-800 text-zinc-400">
           <HelpCircle className="w-3 h-3" />
           {cell.status}
         </span>
