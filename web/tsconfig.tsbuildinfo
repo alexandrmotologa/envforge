@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/codebaseauditview.tsx","./src/components/driftalertcard.tsx","./src/components/paritymatrixgrid.tsx","./src/components/quicksyncmodal.tsx","./src/components/schemaexportmodal.tsx","./src/components/variableinspectormodal.tsx","./src/hooks/useenvdata.ts"],"version":"5.9.3"}

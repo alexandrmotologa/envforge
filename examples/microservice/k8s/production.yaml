@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: production
+data:
+  PORT: "8080"
+  NODE_ENV: production
+  DB_POOL_SIZE: "25"
+  ENABLE_METRICS: "true"
+  CACHE_TTL: "7200"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-secrets
+  namespace: production
+data:
+  DATABASE_URL: cG9zdGdyZXM6Ly9wcm9kdXNlcjpwcm9kcGFzczEyc0Bwcm9kLWRiOjU0MzIvYXBw
+  JWT_SECRET: c29tZS1wcm9kdWN0aW9uLXNlY3JldC10b2tlbg==
+stringData:
+  API_KEY: prod-service-token-998877
